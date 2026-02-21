@@ -1,3 +1,35 @@
+<?php
+session_start();
+require_once "config/db.php"; // Connects to vetclinic_db
+
+$error = "";
+
+// Check if form submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+
+    // Prepare SQL statement
+    $stmt = $conn->prepare("SELECT * FROM super_admins WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $admin = $result->fetch_assoc();
+        // Direct password comparison (plain text)
+        if ($password === $admin['password']) {
+            $_SESSION['super_admin_id'] = $admin['id']; // Updated session key
+            header("Location: index_superadmin.php"); // Redirect on success
+            exit();
+        } else {
+            $error = "Invalid password!";
+        }
+    } else {
+        $error = "Admin not found!";
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,6 +50,7 @@
         .btn-dark-admin:hover { background-color: #000; }
         .register-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 0.85rem; }
         .register-footer a { color: var(--admin-dark); font-weight: 700; text-decoration: none; }
+        .text-danger { font-size: 0.9rem; text-align: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -27,22 +60,27 @@
             <h4 class="fw-bold mb-1">Super Admin Access</h4>
             <p class="text-muted small">Secure Network Console</p>
         </div>
-        <form action="index_superadmin.html" method="GET">
+
+        <?php if ($error != ""): ?>
+            <div class="text-danger"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <form action="" method="POST">
             <div class="mb-3">
                 <label class="form-label">Administrator Email</label>
-                <input type="email" class="form-control" placeholder="admin@vet.com" required>
+                <input type="email" name="email" class="form-control" placeholder="admin@vet.com" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Secure Password</label>
-                <input type="password" class="form-control" placeholder="••••••••" required>
+                <input type="password" name="password" class="form-control" placeholder="••••••••" required>
             </div>
-            <div class="form-check mb-4 mt-3">
+            <div class="form-check mb-4 mt-3 d-flex justify-content-between align-items-center">
                 <input class="form-check-input" type="checkbox" id="rememberMe">
                 <a href="forgot-password.html" class="forgot-link">Forgot Password?</a>
             </div>
             <button type="submit" class="btn btn-dark-admin shadow-sm">Login to Dashboard</button>
         </form>
-        <div class="register-footer">Already have an account? <a href="register.html">Register here!</a></div>
+        <div class="register-footer">Don't have an account? <a href="register.html">Register here!</a></div>
     </div>
     <script>feather.replace();</script>
 </body>

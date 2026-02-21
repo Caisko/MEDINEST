@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "config/db.php"; // make sure path is correct
+require_once "config/db.php";
 
 // MANUAL PHPMailer INCLUDES
 require 'PHPMailer/src/PHPMailer.php';
@@ -19,10 +19,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
     $firstName   = trim($_POST["firstName"] ?? "");
     $middleName  = trim($_POST["middleName"] ?? "");
     $lastName    = trim($_POST["lastName"] ?? "");
-    $email       = trim(string: $_POST["emailReg"] ?? "");
+    $email       = trim($_POST["emailReg"] ?? "");   // FIXED
     $contact     = trim($_POST["contact"] ?? "");
     $address     = trim($_POST["address"] ?? "");
-    $barangay    = trim(string: $_POST["barangay"] ?? "");
+    $barangay    = trim($_POST["barangay"] ?? "");   // FIXED
     $password    = $_POST["passwordReg"] ?? "";
     $confirmPass = $_POST["confirmPassword"] ?? "";
 
@@ -44,6 +44,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
         $errors[] = "Invalid Philippine mobile number.";
     }
 
+    if ($barangay === "") {
+        $errors[] = "Barangay is required.";
+    }
+
     if (strlen($password) < 8) {
         $errors[] = "Password must be at least 8 characters.";
     }
@@ -52,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
         $errors[] = "Passwords do not match.";
     }
 
-    
+    // ---------- CHECK DUPLICATE EMAIL ----------
     if (empty($errors)) {
         $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $check->bind_param("s", $email);
@@ -75,15 +79,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
 
+        // FIXED ORDER + TYPE COUNT
         $stmt->bind_param(
-            "sssssssssi",
+            "ssssssssssi",
             $firstName,
             $middleName,
             $lastName,
             $contact,
             $address,
+            $barangay,        // moved here
             $email,
-            $barangay,
             $hashedPassword,
             $role,
             $verificationCode,
@@ -91,14 +96,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
         );
 
         if ($stmt->execute()) {
-            // ---------- SEND VERIFICATION EMAIL ----------
+
             $mail = new PHPMailer(true);
             try {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
                 $mail->Username   = 'johnchristianloyola203@gmail.com';
-                $mail->Password   = 'vmcijyvnhtqshzmg'; // your App Password
+                $mail->Password   = 'oets wjer nbbt xlii'; // MOVE TO ENV LATER
                 $mail->SMTPSecure = 'tls';
                 $mail->Port       = 587;
 
@@ -147,6 +152,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
     exit;
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -211,82 +218,85 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['ajax'])) {
 
 <div class="mb-3">
   <label for="barangay" class="form-label">Barangay (Dasmariñas)</label>
-  <select class="form-select" id="barangay" required>
+  <select class="form-select" id="barangay"  name="barangay" required>
     <option value="" selected disabled>Select Barangay</option>
-    <option>Burol</option>
-    <option>Burol I</option>
-    <option>Burol II</option>
-    <option>Burol III</option>
-    <option>Datu Esmael</option>
-    <option>Emmanuel Bergado I</option>
-    <option>Emmanuel Bergado II</option>
-    <option>Fatima I</option>
-    <option>Fatima II</option>
-    <option>Fatima III</option>
-    <option>H-2</option>
-    <option>Langkaan I</option>
-    <option>Langkaan II</option>
-    <option>Luzviminda I</option>
-    <option>Luzviminda II</option>
-    <option>Luzviminda III</option>
-    <option>Paliparan I</option>
-    <option>Paliparan II</option>
-    <option>Paliparan III</option>
-    <option>Sabang</option>
-    <option>Salawag</option>
-    <option>Salitran I</option>
-    <option>Salitran II</option>
-    <option>Salitran III</option>
-    <option>Salitran IV</option>
-    <option>Sampaloc I</option>
-    <option>Sampaloc II</option>
-    <option>Sampaloc III</option>
-    <option>Sampaloc IV</option>
-    <option>Sampaloc V</option>
-    <option>San Agustin I</option>
-    <option>San Agustin II</option>
-    <option>San Agustin III</option>
-    <option>San Andres I</option>
-    <option>San Andres II</option>
-    <option>San Antonio De Padua I</option>
-    <option>San Antonio De Padua II</option>
-    <option>San Dionisio</option>
-    <option>San Esteban</option>
-    <option>San Francisco I</option>
-    <option>San Francisco II</option>
-    <option>San Isidro Labrador I</option>
-    <option>San Isidro Labrador II</option>
-    <option>San Jose</option>
-    <option>San Juan I</option>
-    <option>San Juan II</option>
-    <option>San Lorenzo Ruiz I</option>
-    <option>San Lorenzo Ruiz II</option>
-    <option>San Luis I</option>
-    <option>San Luis II</option>
-    <option>San Manuel I</option>
-    <option>San Manuel II</option>
-    <option>San Mateo</option>
-    <option>San Miguel</option>
-    <option>San Nicolas I</option>
-    <option>San Nicolas II</option>
-    <option>San Roque</option>
-    <option>San Simon</option>
-    <option>Santa Cristina I</option>
-    <option>Santa Cristina II</option>
-    <option>Santa Fe</option>
-    <option>Santa Lucia</option>
-    <option>Santa Maria</option>
-    <option>Santo Cristo</option>
-    <option>Santo Niño I</option>
-    <option>Santo Niño II</option>
-    <option>Victoria Reyes</option>
-    <option>Zone I</option>
-    <option>Zone I-A</option>
-    <option>Zone II</option>
-    <option>Zone III</option>
-    <option>Zone IV</option>
+
+    <option value="burol">Burol</option>
+    <option value="burol-1">Burol I</option>
+    <option value="burol-2">Burol II</option>
+    <option value="burol-3">Burol III</option>
+    <option value="datu-esmael">Datu Esmael</option>
+    <option value="emmanuel-bergado-1">Emmanuel Bergado I</option>
+    <option value="emmanuel-bergado-2">Emmanuel Bergado II</option>
+    <option value="fatima-1">Fatima I</option>
+    <option value="fatima-2">Fatima II</option>
+    <option value="fatima-3">Fatima III</option>
+    <option value="h-2">H-2</option>
+    <option value="langkaan-1">Langkaan I</option>
+    <option value="langkaan-2">Langkaan II</option>
+    <option value="luzviminda-1">Luzviminda I</option>
+    <option value="luzviminda-2">Luzviminda II</option>
+    <option value="luzviminda-3">Luzviminda III</option>
+    <option value="paliparan-1">Paliparan I</option>
+    <option value="paliparan-2">Paliparan II</option>
+    <option value="paliparan-3">Paliparan III</option>
+    <option value="sabang">Sabang</option>
+    <option value="salawag">Salawag</option>
+    <option value="salitran-1">Salitran I</option>
+    <option value="salitran-2">Salitran II</option>
+    <option value="salitran-3">Salitran III</option>
+    <option value="salitran-4">Salitran IV</option>
+    <option value="sampaloc-1">Sampaloc I</option>
+    <option value="sampaloc-2">Sampaloc II</option>
+    <option value="sampaloc-3">Sampaloc III</option>
+    <option value="sampaloc-4">Sampaloc IV</option>
+    <option value="sampaloc-5">Sampaloc V</option>
+    <option value="san-agustin-1">San Agustin I</option>
+    <option value="san-agustin-2">San Agustin II</option>
+    <option value="san-agustin-3">San Agustin III</option>
+    <option value="san-andres-1">San Andres I</option>
+    <option value="san-andres-2">San Andres II</option>
+    <option value="san-antonio-de-padua-1">San Antonio De Padua I</option>
+    <option value="san-antonio-de-padua-2">San Antonio De Padua II</option>
+    <option value="san-dionisio">San Dionisio</option>
+    <option value="san-esteban">San Esteban</option>
+    <option value="san-francisco-1">San Francisco I</option>
+    <option value="san-francisco-2">San Francisco II</option>
+    <option value="san-isidro-labrador-1">San Isidro Labrador I</option>
+    <option value="san-isidro-labrador-2">San Isidro Labrador II</option>
+    <option value="san-jose">San Jose</option>
+    <option value="san-juan-1">San Juan I</option>
+    <option value="san-juan-2">San Juan II</option>
+    <option value="san-lorenzo-ruiz-1">San Lorenzo Ruiz I</option>
+    <option value="san-lorenzo-ruiz-2">San Lorenzo Ruiz II</option>
+    <option value="san-luis-1">San Luis I</option>
+    <option value="san-luis-2">San Luis II</option>
+    <option value="san-manuel-1">San Manuel I</option>
+    <option value="san-manuel-2">San Manuel II</option>
+    <option value="san-mateo">San Mateo</option>
+    <option value="san-miguel">San Miguel</option>
+    <option value="san-nicolas-1">San Nicolas I</option>
+    <option value="san-nicolas-2">San Nicolas II</option>
+    <option value="san-roque">San Roque</option>
+    <option value="san-simon">San Simon</option>
+    <option value="santa-cristina-1">Santa Cristina I</option>
+    <option value="santa-cristina-2">Santa Cristina II</option>
+    <option value="santa-fe">Santa Fe</option>
+    <option value="santa-lucia">Santa Lucia</option>
+    <option value="santa-maria">Santa Maria</option>
+    <option value="santo-cristo">Santo Cristo</option>
+    <option value="santo-nino-1">Santo Niño I</option>
+    <option value="santo-nino-2">Santo Niño II</option>
+    <option value="victoria-reyes">Victoria Reyes</option>
+    <option value="zone-1">Zone I</option>
+    <option value="zone-1a">Zone I-A</option>
+    <option value="zone-2">Zone II</option>
+    <option value="zone-3">Zone III</option>
+    <option value="zone-4">Zone IV</option>
+
   </select>
 </div>
+
 
     <div class="mt-3">
       <label class="form-label">Password</label>

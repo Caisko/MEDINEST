@@ -1,3 +1,22 @@
+<?php
+session_start();
+require_once "config/db.php";
+
+// Check if admin is logged in
+if (!isset($_SESSION['super_admin_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Fetch logged-in admin info
+$adminId = $_SESSION['super_admin_id'];
+$stmt = $conn->prepare("SELECT name, email FROM super_admins WHERE id = ?");
+$stmt->bind_param("i", $adminId);
+$stmt->execute();
+$result = $stmt->get_result();
+$admin = $result->fetch_assoc();
+$adminName = $admin['name'] ?? "Admin"; // Fallback to "Admin" if name is null
+?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
 <head>
@@ -117,7 +136,8 @@
                 <h4 class="fw-bold mb-1">Vet  Overview</h4>
                 <p class="text-muted small mb-0">Real-time performance and scheduling.</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
+                <span class="fw-semibold me-2">Hi, <?php echo htmlspecialchars($adminName); ?></span>
                 <button class="theme-toggle" id="darkModeBtn"><i data-feather="moon" id="themeIcon"></i></button>
                 <button class="theme-toggle d-lg-none" id="mobileToggle"><i data-feather="menu"></i></button>
             </div>
